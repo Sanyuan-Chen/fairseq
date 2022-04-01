@@ -311,6 +311,7 @@ class Data2VecAudioModel(BaseFairseqModel):
     def forward(
         self,
         source,
+        clean_source=None,
         padding_mask=None,
         mask=True,
         features_only=False,
@@ -397,6 +398,15 @@ class Data2VecAudioModel(BaseFairseqModel):
             self.ema.model.eval()
 
             if self.cfg.ema_transformer_only:
+                if clean_source is not None:
+                    with torch.no_grad():
+                        features = self.feature_extractor(clean_source)
+                    features = features.transpose(1, 2)
+                    features = self.layer_norm(features)
+                    if self.post_extract_proj is not None:
+                        features = self.post_extract_proj(features)
+                    pre_encoder_features = features
+
                 y, layer_results = self.ema.model.extract_features(
                     pre_encoder_features,
                     padding_mask=padding_mask,
@@ -408,6 +418,9 @@ class Data2VecAudioModel(BaseFairseqModel):
                     "layer_results": layer_results,
                 }
             else:
+                if clean_source is not None:
+                    source = clean_source
+
                 y = self.ema.model.extract_features(
                     source=source,
                     padding_mask=orig_padding_mask,

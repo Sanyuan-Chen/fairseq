@@ -1,0 +1,70 @@
+description: data2vec
+
+# AML
+target:
+#  name: itpeastusv100cl
+#  name: itpeusp100cl
+#  name: itpscusv100cl
+#  name: itpseasiav100cl
+#  name: itplabrr1cl1
+#  name: itp-v100-scus-2
+#  name: itp-v100-wus2
+  name: itp-v100-scus
+  service: amlk8s
+#  vc: resrchvc
+#  vc: speech-itp-ahuna
+  vc: speech-itp-am-e2e
+#  vc: speech-itp-default
+#  queue: bonus
+
+environment:
+  image: sanyuanchen/data2vec:torch1.11
+  setup:
+    - pip install --editable ./
+
+# azure blob configuration
+storage:
+  data_blob:
+#    storage_account_name: tsprmblob01eus
+#    storage_account_name: tsprmblob01scus
+#    storage_account_name: tsprmblob01wus2
+#    storage_account_name: tsstd01eus
+    storage_account_name: tsstd01scus
+#    storage_account_name: tsstd01wus2
+#    container_name: data
+    container_name: models
+    mount_dir: /datablob
+    mount_options:
+    - -o
+    - attr_timeout=240
+    - -o
+    - entry_timeout=240
+    - -o
+    - negative_timeout=120
+    - -o
+    - allow_other
+    - --log-level=LOG_WARNING
+    - --file-cache-timeout-in-seconds=3600
+  blob_model:
+#    storage_account_name: tsstd01eus
+    storage_account_name: tsstd01scus
+#    storage_account_name: tsstd01wus2
+    container_name: models
+    mount_dir: /modelblob
+
+code:
+  local_dir: .
+
+# amlt run submit_script/ITP_yaml/data2vec_960h.yaml data2vec_16g32 -y
+
+# list of jobs to run
+jobs:
+  - name: data2vec
+    sku: 2x G8
+#    sku_count: 1
+#    aml_mpirun:
+#     process_count_per_node: 8
+#     communicator: "OpenMpi"
+    command:
+      - bash submit_script/ITP_bash_scripts/data2vec/data2vec_960h.sh
+#      - sleep infinity
